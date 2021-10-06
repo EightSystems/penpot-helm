@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "penpot-helm.fullname" . }}-exporter
+  labels:
+    {{- include "penpot-helm.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.exporterService.type }}
+  ports:
+    - port: {{ .Values.exporterService.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "penpot-helm.exporterSelectorLabels" . | nindent 4 }}

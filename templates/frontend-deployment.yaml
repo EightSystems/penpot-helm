@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "penpot-helm.fullname" . }}-frontend
+  labels:
+    {{- include "penpot-helm.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "penpot-helm.frontendSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "penpot-helm.frontendSelectorLabels" . | nindent 8 }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ include "penpot-helm.serviceAccountName" . }}
+      
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+
+      volumes:
+      - name: app-data
+      {{- if .Values.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ .Values.persistence.existingClaim | default ( include "penpot-helm.fullname" . ) }}
+      {{- else }}
+        emptyDir: {}
+      {{- end }}
+      - configMap:
+          defaultMode: 420
+          name: "{{ include "penpot-helm.fullname" . }}-nginx-config"
+        name: "{{ include "penpot-helm.fullname" . }}-nginx-config"
+      containers:
+        - name: {{ .Chart.Name }}-frontend
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.frontendImage.repository }}:{{ .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.frontendImage.pullPolicy }}
+          env:
+            - name: PENPOT_ALLOW_DEMO_USERS
+              value: "false"
+            - name: PENPOT_PUBLIC_URI
+              value: "{{ .Values.penpot.publicURI }}"
+            - name: PENPOT_FLAGS
+              value: "{{ .Values.penpot.flags }}"
+            - name: PENPOT_REGISTRATION_DOMAIN_WHITELIST
+              value: "{{ .Values.penpot.registration.domainWhitelist }}"
+          volumeMounts:
+            - mountPath: /opt/data
+              name: app-data
+              readOnly: false
+            - mountPath: /etc/nginx/nginx.conf
+              name: "{{ include "penpot-helm.fullname" . }}-nginx-config"
+              readOnly: true
+              subPath: nginx.conf
+            - mountPath: /var/www/app/js/config.js
+              name: "{{ include "penpot-helm.fullname" . }}-nginx-config"
+              readOnly: false
+              subPath: config.js
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}

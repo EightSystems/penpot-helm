@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "penpot-helm.fullname" . }}-backend
+  labels:
+    {{- include "penpot-helm.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.backendReplicaCount }}
+  selector:
+    matchLabels:
+      {{- include "penpot-helm.backendSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "penpot-helm.backendSelectorLabels" . | nindent 8 }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ include "penpot-helm.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}-backend
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.backendImage.repository }}:{{ .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.backendImage.pullPolicy }}
+          volumeMounts:
+            - mountPath: /opt/data
+              name: app-data
+              readOnly: false
+          env:
+            - name: PENPOT_ALLOW_DEMO_USERS
+              value: "false"
+            - name: PENPOT_PUBLIC_URI
+              value: "{{ .Values.penpot.publicURI }}"
+            - name: PENPOT_DATABASE_URI
+              value: "postgresql://{{ .Values.postgresql.host }}/{{ .Values.postgresql.database }}"
+            - name: PENPOT_DATABASE_USERNAME
+              value: "{{ .Values.postgresql.username }}"
+            - name: PENPOT_DATABASE_PASSWORD
+              value: "{{ .Values.postgresql.password }}"
+            - name: PENPOT_REDIS_URI
+              value: "redis://{{ .Values.redis.host }}/{{ .Values.redis.database }}"
+            - name: ASSETS_STORAGE_BACKEND
+              value: "assets-fs"
+            - name: PENPOT_STORAGE_ASSETS_FS_DIRECTORY
+              value: "/opt/data/assets"
+            - name: PENPOT_TELEMETRY_ENABLED
+              value: "{{ toString .Values.penpot.telemetry.enabled }}"
+            - name: PENPOT_SMTP_ENABLED
+              value: "{{ toString .Values.penpot.smtp.enabled }}"
+            - name: PENPOT_SMTP_DEFAULT_FROM
+              value: "{{ .Values.penpot.smtp.defaultFrom }}"
+            - name: PENPOT_SMTP_DEFAULT_REPLY_TO
+              value: "{{ .Values.penpot.smtp.defaultReplyTo }}"
+            - name: PENPOT_SMTP_HOST
+              value: "{{ .Values.penpot.smtp.host }}"
+            - name: PENPOT_SMTP_PORT
+              value: "{{ .Values.penpot.smtp.port }}"
+            - name: PENPOT_SMTP_USERNAME
+              value: "{{ .Values.penpot.smtp.username }}"
+            - name: PENPOT_SMTP_PASSWORD
+              value: "{{ .Values.penpot.smtp.password }}"
+            - name: PENPOT_SMTP_TLS
+              value: "{{ toString .Values.penpot.smtp.tls }}"
+            - name: PENPOT_SMTP_SSL
+              value: "{{ toString .Values.penpot.smtp.ssl }}"
+            - name: PENPOT_FLAGS
+              value: "{{ .Values.penpot.flags }}"
+            - name: PENPOT_REGISTRATION_DOMAIN_WHITELIST
+              value: "{{ .Values.penpot.registration.domainWhitelist }}"
+          ports:
+            - name: http
+              containerPort: 6060
+              protocol: TCP
+          #livenessProbe:
+          #  httpGet:
+          #    path: /
+          #    port: http
+          #readinessProbe:
+          #  httpGet:
+          #    path: /
+          #    port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      volumes:
+      - name: app-data
+      {{- if .Values.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ .Values.persistence.existingClaim | default ( include "penpot-helm.fullname" . ) }}
+      {{- else }}
+        emptyDir: {}
+      {{- end }}

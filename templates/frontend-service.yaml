@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "penpot-helm.fullname" . }}
+  labels:
+    {{- include "penpot-helm.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.frontendService.type }}
+  ports:
+    - port: {{ .Values.frontendService.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "penpot-helm.frontendSelectorLabels" . | nindent 4 }}
