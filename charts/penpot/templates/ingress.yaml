@@ -34,6 +34,7 @@ spec:
     - host: {{ .host | quote }}
       http:
         paths:
+
 {{- if semverCompare ">=1.19-0" $gitVersion -}}
         - path: /
           pathType: Prefix
