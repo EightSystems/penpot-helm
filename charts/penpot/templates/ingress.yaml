@@ -33,9 +33,19 @@ spec:
     - host: {{ .host | quote }}
       http:
         paths:
+{{- if semverCompare ">=1.19-0" $gitVersion -}}
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: {{ $fullName }}
+              port:
+                number: {{ $svcPort }}
+{{- else -}}
         - path: /
           backend:
             serviceName: {{ $fullName }}
             servicePort: {{ $svcPort }}
+{{- end }}
   {{- end }}
 {{- end }}
