@@ -1,4 +1,5 @@
 {{- if .Values.ingress.enabled -}}
+{{- $gitVersion := .Capabilities.KubeVersion.GitVersion -}}
 {{- $fullName := include "penpot-helm.fullname" . -}}
 {{- $svcPort := .Values.frontendService.port -}}
 {{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion -}}
