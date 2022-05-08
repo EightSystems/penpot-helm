@@ -3,6 +3,16 @@ entries:
   penpot:
   - apiVersion: v2
     appVersion: 1.12.4-beta
+    created: "2022-05-08T19:14:06.946327601Z"
+    description: Penpot.app Helm Chart for Kubernetes
+    digest: 5822ba2ab812254d97b4202e8cc8305b0cca3ea8c2c8eea69ae454c298d10573
+    name: penpot
+    type: application
+    urls:
+    - https://github.com/EightSystems/penpot-helm/releases/download/penpot-1.12.8/penpot-1.12.8.tgz
+    version: 1.12.8
+  - apiVersion: v2
+    appVersion: 1.12.4-beta
     created: "2022-05-08T19:08:18.339706687Z"
     description: Penpot.app Helm Chart for Kubernetes
     digest: 1fdbadde7e983f6ba629400d075d2b6139e732410df1281bd0c4b3d6c872a3cf
@@ -41,4 +51,4 @@ entries:
     urls:
     - https://github.com/EightSystems/penpot-helm/releases/download/penpot-1.12.4/penpot-1.12.4.tgz
     version: 1.12.4
-generated: "2022-05-08T19:08:18.339723787Z"
+generated: "2022-05-08T19:14:06.946361002Z"
